@@ -2,7 +2,7 @@ import gymnasium as gym
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
-
+import sys
 
 def print_success_rate(rewards_per_episode):
     """Calculate and print the success rate of the agent."""
@@ -12,9 +12,31 @@ def print_success_rate(rewards_per_episode):
     print(f"✅ Success Rate: {success_rate:.2f}% ({int(success_count)} / {total_episodes} episodes)")
     return success_rate
 
-def run(episodes, is_training=True, render=False):
+def find_best_combination():
+    "自動的尋找最佳參數組合"
+    best_late_success_rate = 0
+    best_combination = (0,0)
 
-    env = gym.make('FrozenLake-v1', map_name="8x8", is_slippery=True, render_mode='human' if render else None)
+    decay_rate = np.arange(0.00008, 0.0004, 0.00001)
+    min_epsilon_values = np.arange(0, 0.00025, 0.00001)
+
+    for epsilon_decay_rate in decay_rate:
+        for min_epsilon in min_epsilon_values:
+            print(f"Testing combination: epsilon_decay_rate={epsilon_decay_rate}, min_epsilon={min_epsilon}")
+            late_success_rate , q_table = run(15000, is_training=True, render=False, epsilon_decay_rate=epsilon_decay_rate, min_epsilon=min_epsilon)
+            if late_success_rate > best_late_success_rate:
+                best_late_success_rate = late_success_rate
+                best_combination = (epsilon_decay_rate, min_epsilon)
+
+                print(f"New best combination found: epsilon_decay_rate={epsilon_decay_rate}, min_epsilon={min_epsilon} with Success Rate: {best_late_success_rate:.2f}%")
+                f = open("frozen_lake8x8.pkl","wb")
+                pickle.dump(q_table, f)
+                f.close()
+    print(f"Best combination: epsilon_decay_rate={best_combination[0]:.5f}, min_epsilon={best_combination[1]:.5f} with Success Rate: {best_late_success_rate:.2f}%")
+
+def run(episodes, is_training=True, render=False , epsilon_decay_rate=0.0001 , min_epsilon=0.0001):
+
+    env = gym.make('FrozenLake-v1', map_name="8x8", is_slippery=True, render_mode='ansi' if render else None)
 
     if(is_training):
         q = np.zeros((env.observation_space.n, env.action_space.n)) # init a 64 x 4 array
@@ -26,13 +48,13 @@ def run(episodes, is_training=True, render=False):
     learning_rate_a = 0.9 # alpha or learning rate
     discount_factor_g = 0.9 # gamma or discount rate. Near 0: more weight/reward placed on immediate state. Near 1: more on future state.
     epsilon = 1         # 1 = 100% random actions
-    epsilon_decay_rate = 0.0001        # epsilon decay rate. 1/0.0001 = 10,000
     rng = np.random.default_rng()   # random number generator
 
     rewards_per_episode = np.zeros(episodes)
 
     for i in range(episodes):
         state = env.reset()[0]  # states: 0 to 63, 0=top left corner,63=bottom right corner
+        
         terminated = False      # True when fall in hole or reached goal
         truncated = False       # True when actions > 200
 
@@ -40,18 +62,18 @@ def run(episodes, is_training=True, render=False):
             if is_training and rng.random() < epsilon:
                 action = env.action_space.sample() # actions: 0=left,1=down,2=right,3=up
             else:
-                action = np.argmax(q[state,:])
+                action = q[state,:].argmax()
 
             new_state,reward,terminated,truncated,_ = env.step(action)
-
+            #print(env.render())
             if is_training:
                 q[state,action] = q[state,action] + learning_rate_a * (
-                    reward + discount_factor_g * np.max(q[new_state,:]) - q[state,action]
+                    reward + discount_factor_g * q[new_state, :].max() - q[state,action]
                 )
 
             state = new_state
 
-        epsilon = max(epsilon - epsilon_decay_rate, 0)
+        epsilon = max(epsilon - epsilon_decay_rate, min_epsilon)
 
         if(epsilon==0):
             learning_rate_a = 0.0001
@@ -69,13 +91,19 @@ def run(episodes, is_training=True, render=False):
     
     if is_training == False:
         print(print_success_rate(rewards_per_episode))
-
+               
     if is_training:
-        f = open("frozen_lake8x8.pkl","wb")
-        pickle.dump(q, f)
-        f.close()
+        last_n_episodes = 1000
+        if episodes < last_n_episodes:
+            last_n_episodes = episodes
+            
+        late_success_rate = np.sum(rewards_per_episode[-last_n_episodes:]) / last_n_episodes * 100
+        print(f"Late Stage Success Rate (Last {last_n_episodes}): {late_success_rate:.2f}%")
+        return late_success_rate , q
 
 if __name__ == '__main__':
-    # run(15000, is_training=True, render=False)
-
-    run(10, is_training=False, render=True)
+    #0 train 1 test
+    if len(sys.argv) > 1 and sys.argv[1] == '0':
+        find_best_combination()
+    else:
+        run(500, is_training=False, render=True)
