@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 import pickle
 import sys
 import argparse
+import json
 from tqdm import tqdm
+import optuna
 
 TRAIN_EPISODES = 15000
 RUN_EPISODES = 1000
@@ -32,35 +34,43 @@ def print_success_rate(rewards_per_episode):
     print(f"✅ Success Rate: {success_rate:.2f}% ({int(success_count)} / {total_episodes} episodes)")
     return success_rate
 
-def find_best_combination():
+def tune_parameter_combinations():
     "自動的尋找最佳參數組合"
-    best_late_success_rate = 0
-    best_combination = (0,0,0)
 
-    decay_rate = np.arange(0.00008, 0.0004, 0.00001)
-    min_epsilon_values = np.arange(0, 0.00025, 0.00001)
-    learning_rates = np.arange(0.5, 0.9, 0.05)
+    def objective(trial):
+        epsilon_decay_rate = trial.suggest_float('epsilon_decay_rate', 0.00001, 0.001, log=True)
+        min_epsilon = trial.suggest_float('min_epsilon', 0.00001, 0.1, log=True)
+        learning_rate = trial.suggest_float('learning_rate', 0.01, 1.0, log=True)
 
-    for epsilon_decay_rate in decay_rate:
-        for min_epsilon in min_epsilon_values:
-            for learning_rate in learning_rates:
-                print(f"Testing combination: epsilon_decay_rate={epsilon_decay_rate}, min_epsilon={min_epsilon}, learning_rate={learning_rate}")
-                late_success_rate , q_table = run(15000, is_training=True, render=False, epsilon_decay_rate=epsilon_decay_rate, min_epsilon=min_epsilon, learning_rate_a=learning_rate)
-                if late_success_rate > best_late_success_rate:
-                    best_late_success_rate = late_success_rate
-                    best_combination = (epsilon_decay_rate, min_epsilon, learning_rate)
+        return run(
+            TRAIN_EPISODES,
+            is_training=True,
+            render=False,
+            epsilon_decay_rate=epsilon_decay_rate,
+            min_epsilon=min_epsilon,
+            learning_rate_a=learning_rate
+        )
+    
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=50)
 
-                    print(f"New best combination found: epsilon_decay_rate={epsilon_decay_rate}, min_epsilon={min_epsilon}, learning_rate={learning_rate} with Success Rate: {best_late_success_rate:.2f}%")
-                    f = open("frozen_lake8x8.pkl","wb")
-                    pickle.dump(q_table, f)
-                    f.close()
-    print(f"Best combination: epsilon_decay_rate={best_combination[0]:.5f}, min_epsilon={best_combination[1]:.5f}, learning_rate={best_combination[2]:.2f}  with Success Rate: {best_late_success_rate:.2f}%")
+    print('Number of finished trials:', len(study.trials))
+    print('Best trial parameters:', study.best_trial.params)
+    print('Best score:', study.best_value)
 
-def run(episodes, is_training=True, render=False , epsilon_decay_rate=0.0001 , min_epsilon=0.0001, learning_rate_a=0.55):
+    with open('frozen_lake8x8_tuning_results.json', 'w+') as f:
+        json.dump({
+            'best_params': study.best_trial.params,
+            'best_value': study.best_value
+        }, f, indent=4)
+
+    # print(f"Best combination: epsilon_decay_rate={best_combination[0]:.5f}, min_epsilon={best_combination[1]:.5f}, learning_rate={best_combination[2]:.2f}  with Success Rate: {best_late_success_rate:.2f}%")
+
+def run(episodes, is_training=True, render=False , epsilon_decay_rate=0.0001 , min_epsilon=0.0001, learning_rate_a=0.1):
 
     env = gym.make('FrozenLake-v1', map_name="8x8", is_slippery=True, render_mode='ansi' if render else None)
 
-    if(is_training):
+    if is_training :
         q = np.zeros((env.observation_space.n, env.action_space.n)) # init a 64 x 4 array
     else:
         f = open('frozen_lake8x8.pkl', 'rb')
@@ -112,16 +122,18 @@ def run(episodes, is_training=True, render=False , epsilon_decay_rate=0.0001 , m
     plt.savefig('frozen_lake8x8.png')
     
     if is_training == False:
-        print(print_success_rate(rewards_per_episode))
-               
+        print("Running Success Rate over time:")
+        success_rate = print_success_rate(rewards_per_episode)
+
     if is_training:
-        last_n_episodes = 1000
-        if episodes < last_n_episodes:
-            last_n_episodes = episodes
-            
-        late_success_rate = np.sum(rewards_per_episode[-last_n_episodes:]) / last_n_episodes * 100
-        print(f"Late Stage Success Rate (Last {last_n_episodes}): {late_success_rate:.2f}%")
-        return late_success_rate , q
+        print("Late Training Success Rate (last 1000 episodes):")
+        success_rate = print_success_rate(rewards_per_episode[-1000:])
+
+        f = open("frozen_lake8x8.pkl","wb")
+        pickle.dump(q, f)
+        f.close()
+
+    return success_rate
 
 if __name__ == '__main__':
     
@@ -130,7 +142,19 @@ if __name__ == '__main__':
 
     if args.run:
         run(RUN_EPISODES, is_training=False, render=False)
+
     elif args.train:
-        run(TRAIN_EPISODES, is_training=True, render=False)
+        with open('frozen_lake8x8_tuning_results.json', 'r') as f:
+            json_data = json.load(f)
+            best_params = json_data['best_params']
+        run(TRAIN_EPISODES,
+            is_training=True,
+            render=False,
+            epsilon_decay_rate=best_params['epsilon_decay_rate'],
+            min_epsilon=best_params['min_epsilon'],
+            learning_rate_a=best_params['learning_rate']
+        )
+        run(RUN_EPISODES, is_training=False, render=False)
+
     elif args.tune:
-        find_best_combination()
+        tune_parameter_combinations()

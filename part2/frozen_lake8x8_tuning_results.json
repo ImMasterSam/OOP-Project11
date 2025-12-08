@@ -1,0 +1,8 @@
+{
+    "best_params": {
+        "epsilon_decay_rate": 7.744943291135836e-05,
+        "min_epsilon": 0.00027648797183505195,
+        "learning_rate": 0.030023579998413857
+    },
+    "best_value": 61.6
+}
