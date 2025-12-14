@@ -257,7 +257,7 @@ class Trainer:
                         
                         def to_map(x, y):
                              mx = (x - min_x) * scale + padding + (map_size - 2*padding - width*scale)/2
-                             my = (y - min_y) * scale + padding + (map_size - 2*padding - height*scale)/2
+                             my = (max_y - y) * scale + padding + (map_size - 2*padding - height*scale)/2
                              return int(mx), int(my)
 
                         # Draw Track
@@ -273,8 +273,8 @@ class Trainer:
                             
                             # Direction Line
                             angle = self.env.car.hull.angle
-                            end_x = cmx + 10 * np.cos(angle)
-                            end_y = cmy + 10 * np.sin(angle)
+                            end_x = cmx + 10 * np.cos(angle + np.pi / 2)
+                            end_y = cmy - 10 * np.sin(angle + np.pi / 2)
                             pygame.draw.line(mini_map, (255, 255, 0), (cmx, cmy), (end_x, end_y), 2)
 
                         # Draw Opponent Car (NPC)
@@ -285,8 +285,8 @@ class Trainer:
                             
                             # Direction Line for NPC
                             angle2 = self.env.car2.hull.angle
-                            end_x2 = cmx2 + 10 * np.cos(angle2)
-                            end_y2 = cmy2 + 10 * np.sin(angle2)
+                            end_x2 = cmx2 + 10 * np.cos(angle2 + np.pi / 2)
+                            end_y2 = cmy2 - 10 * np.sin(angle2 + np.pi / 2)
                             pygame.draw.line(mini_map, (100, 100, 255), (cmx2, cmy2), (end_x2, end_y2), 2)
 
                     # Blit Map to Top-Right
