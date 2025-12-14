@@ -101,128 +101,6 @@ class ManualAgent(Agent):
         # steer: -1 to 1, gas: 0 to 1, brake: 0 to 1
         return np.array([self.steering, self.gas, self.brake], dtype=np.float32)
 
-
-class HeuristicAgent(Agent):
-    """
-    A rule-based agent that drives automatically using Pure Pursuit algorithm.
-    Demonstrates encapsulation of driving logic.
-    """
-    def __init__(self, env, target_car="car"):
-        self.env = env
-        self.target_car_attr = target_car
-        self.last_idx = 0
-        self.step_count = 0
-    
-    def reset(self):
-        self.last_idx = 0
-        self.step_count = 0
-
-    def select_action(self, observation):
-        """
-        Pure Pursuit: Steer towards a target point ahead on the track.
-        """
-        self.step_count += 1
-        
-        # Access the target car dynamically (e.g., 'car' or 'car2')
-        car = getattr(self.env, self.target_car_attr, None)
-        
-        if not car or not hasattr(self.env, 'track') or len(self.env.track) == 0:
-            return np.array([0, 0, 0], dtype=np.float32)
-        
-        # Startup pause
-        if self.step_count < 20:
-            return np.array([0, 0, 0], dtype=np.float32)
-
-        track = self.env.track
-        car_x, car_y = car.hull.position
-        car_angle = car.hull.angle
-        speed = np.linalg.norm(car.hull.linearVelocity)
-        omega = car.hull.angularVelocity
-
-        # Find closest track point
-        n = len(track)
-        fx, fy = np.cos(car_angle), np.sin(car_angle)  # 車頭方向
-
-        if self.step_count <= 5:
-            # 剛開始，還沒有穩定的 last_idx，就先整圈掃
-            candidate_indices = range(n)
-        else:
-            window = 40
-            candidate_indices = [(self.last_idx + k) % n for k in range(-window, window + 1)]
-        
-        best_idx = None
-        best_dist = float("inf")
-
-        for i in candidate_indices:
-            tx, ty = track[i][2], track[i][3]
-            dx = tx - car_x
-            dy = ty - car_y
-
-            # dot > 0 才是在車子的前半平面
-            dot = dx * fx + dy * fy
-            if dot <= 0:
-                continue
-
-            d2 = dx * dx + dy * dy
-            if d2 < best_dist:
-                best_dist = d2
-                best_idx = i
-
-        # 如果前面一個都沒找到（極端情況），退回原本「最近點」邏輯
-        if best_idx is None:
-            best_dist = float("inf")
-            for i in range(n):
-                tx, ty = track[i][2], track[i][3]
-                d2 = (car_x - tx) ** 2 + (car_y - ty) ** 2
-                if d2 < best_dist:
-                    best_dist = d2
-                    best_idx = i
-
-        self.last_idx = best_idx
-
-        # Look ahead - use more lookahead at higher speeds
-        # lookahead = int(10 + 0.5 * speed)
-        # lookahead = max(5, min(lookahead, 25))
-        lookahead = 15
-        target_idx = (best_idx + lookahead) % len(track)
-        
-        target_x = track[target_idx][2]
-        target_y = track[target_idx][3]
-        
-        # Calculate angle to target in world frame
-        dx = target_x - car_x
-        dy = target_y - car_y
-        target_angle = np.arctan2(dy, dx)
-        
-        # Calculate angle error (how much we need to turn)
-        angle_error = target_angle - car_angle
-        
-        # Normalize to [-pi, pi]
-        while angle_error > np.pi: angle_error -= 2*np.pi
-        while angle_error < -np.pi: angle_error += 2*np.pi
-        
-        # PID steering
-        Kp = 1.2   # 先小一點，不要太暴力
-        Kd = 0.4
-        steer = -Kp * angle_error - Kd * omega
-        steer = float(np.clip(steer, -1.0, 1.0))
-        
-        # Speed control
-        base_speed = 22.0
-        curve_penalty = 15.0 * abs(steer)   # 轉越大就降速越多
-        target_speed = base_speed - curve_penalty
-        target_speed = np.clip(target_speed, 8.0, 25.0)
-
-        if speed < target_speed - 2:
-            gas, brake = 0.6, 0.0
-        elif speed > target_speed + 2:
-            gas, brake = 0.0, 0.3
-        else:
-            gas, brake = 0.2, 0.0
-            
-        return np.array([steer, gas, brake], dtype=np.float32)
-
-
 class SmartAgent(Agent):
     """
     PPO Agent using CNN.
@@ -251,7 +129,7 @@ class SmartAgent(Agent):
         # Only load if we are NOT sharing (or if sharing, we assume main agent loaded it)
         # Actually, if we share, we should just use the policy as is.
         if model_path and not policy:
-            self.load(model_path)
+            self.__load(model_path)
             
         # PPO Hyperparameters
         self.gamma = 0.99
@@ -270,9 +148,9 @@ class SmartAgent(Agent):
         
         # Buffer
         self.buffer_size = 2000
-        self.reset_buffer()
+        self.__reset_buffer()
         
-    def preprocess(self, obs):
+    def __preprocess(self, obs):
         # RGB (96, 96, 3) -> Gray (96, 96)
         # Formula: L = 0.299*R + 0.587*G + 0.114*B
         gray = np.dot(obs[...,:3], [0.299, 0.587, 0.114])
@@ -291,7 +169,7 @@ class SmartAgent(Agent):
         # Stack -> (4, 96, 96)
         return np.array(self.frames)
 
-    def reset_buffer(self):
+    def __reset_buffer(self):
         self.states = []
         self.actions = []
         self.log_probs = []
@@ -306,7 +184,7 @@ class SmartAgent(Agent):
     def reset(self):
         self.frames.clear()
     
-    def load(self, path):
+    def __load(self, path):
         try:
             state_dict = torch.load(path, map_location=self.device)
             # Check shape compatibility
@@ -323,14 +201,14 @@ class SmartAgent(Agent):
         except Exception as e:
             print(f"Error loading model: {e}. Starting fresh.")
 
-    def save(self, path):
+    def __save(self, path):
         torch.save(self.policy.state_dict(), path)
         print(f"Saved model to {path}")
 
     def select_action(self, observation):
         # Observation from env is (96, 96, 3)
         # Preprocess -> (4, 96, 96)
-        state = self.preprocess(observation)
+        state = self.__preprocess(observation)
         
         # Torch: (1, 4, 96, 96)
         state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
@@ -390,9 +268,9 @@ class SmartAgent(Agent):
             self.values.append(self.last_value)
             
             if len(self.states) >= self.buffer_size:
-                self.learn(next_obs, done)
+                self.__learn(next_obs, done)
 
-    def learn(self, next_obs, done):
+    def __learn(self, next_obs, done):
         print("Training update...")
         
         # Get next value
@@ -505,12 +383,12 @@ class SmartAgent(Agent):
             # Optional: Check KL divergence for early stopping?
             
         print("Training update complete.")
-        self.reset_buffer()
+        self.__reset_buffer()
 
         
 
         if self.model_path:
-            self.save(self.model_path)
+            self.__save(self.model_path)
 
 class OpponentSmartAgent(SmartAgent):
     """
@@ -518,6 +396,6 @@ class OpponentSmartAgent(SmartAgent):
     This agent learns to be aggressive or whatever objective we set for it.
     It functions identically to SmartAgent but saves/loads a different model.
     """
-    def __init__(self, action_space, model_path="smart_opponent_model.pth"):
+    def __init__(self, action_space, model_path="smart_agent_model.pth"):
         # Initialize SmartAgent with a different model path
         super().__init__(action_space, model_path=model_path)

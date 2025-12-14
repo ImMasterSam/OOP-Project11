@@ -4,7 +4,7 @@ import pygame
 import numpy as np
 import math
 from custom_car_env import CustomCarRacing
-from agents import Agent, RandomAgent, ManualAgent, HeuristicAgent, SmartAgent
+from agents import Agent, RandomAgent, ManualAgent, SmartAgent
 import pygame, ctypes, time
 
 class Trainer:
@@ -32,7 +32,7 @@ class Trainer:
             self.agent.training = self.training
             
         # NPC Agent (Heuristic) for Car 2
-        self.npc_agent = HeuristicAgent(env, target_car="car2")
+        self.npc_agent = SmartAgent(env.action_space, model_path="smart_agent_model.pth")
 
         self.env.reset()
         pygame.display.flip()
@@ -346,10 +346,9 @@ def main():
     print("==========================================")
     print("Select Mode:")
     print("1. Manual Drive")
-    print("2. Auto Pilot (Heuristic Agent)")
-    print("3. Random Chaos")
-    print("4. Train Smart Agent (PPO)")
-    print("5. Visualize Smart Agent")
+    print("2. Random Chaos")
+    print("3. Train Smart Agent (PPO)")
+    print("4. Visualize Smart Agent")
     
     choice = input("Enter choice (1-5): ").strip()
     
@@ -366,11 +365,8 @@ def main():
         agent = ManualAgent()
         episodes = 10
     elif choice == '2':
-        agent = HeuristicAgent(env)
-        episodes = 5
-    elif choice == '3':
         agent = RandomAgent(env.action_space)
-    elif choice == '4':
+    elif choice == '3':
         print("Training Mode...")
         training_enabled = True
         fast = input("Enable Fast Training (No Render)? (y/n): ").strip().lower()
@@ -379,7 +375,7 @@ def main():
         
         agent = SmartAgent(env.action_space, model_path="smart_agent_model.pth")
         episodes = 5000 
-    elif choice == '5':
+    elif choice == '4':
         print("Visualization Mode...")
         # Force render enabled for visualization
         render_enabled = True
@@ -387,11 +383,11 @@ def main():
         agent = SmartAgent(env.action_space, model_path="smart_agent_model.pth")
         episodes = 10
     else:
-        agent = HeuristicAgent(env)
+        agent = SmartAgent(env.action_space, model_path="smart_agent_model.pth")
     
     # NPC Agent Configuration
     # Default to Heuristic
-    npc_agent = HeuristicAgent(env, target_car="car2")
+    npc_agent = SmartAgent(env.action_space, model_path="smart_agent_model.pth")
     
     # If Training Mode, let NPC learn too!
     if choice == '4':
