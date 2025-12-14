@@ -204,10 +204,22 @@ class SmartAgent(Agent):
 
     def __save(self, path):
         try:
+            import time
             temp_path = path + ".tmp"
             torch.save(self.policy.state_dict(), temp_path)
-            os.replace(temp_path, path)
-            print(f"Saved model to {path}")
+            
+            # Retry logic for Windows/OneDrive file locking
+            max_retries = 5
+            for i in range(max_retries):
+                try:
+                    os.replace(temp_path, path)
+                    print(f"Saved model to {path}")
+                    break
+                except OSError:
+                    if i < max_retries - 1:
+                        time.sleep(0.5)
+                    else:
+                        raise
         except Exception as e:
             print(f"Warning: Failed to save model to {path}. Error: {e}")
 

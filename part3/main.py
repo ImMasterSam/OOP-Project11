@@ -32,7 +32,7 @@ class Trainer:
             self.agent.training = self.training
             
         # NPC Agent (Heuristic) for Car 2
-        self.npc_agent = SmartAgent(env.action_space, model_path="smart_agent_model.pth")
+        self.npc_agent = None
 
         self.env.reset()
         if self.render_enabled:
@@ -101,6 +101,16 @@ class Trainer:
                 for _ in range(frame_skip):
                     # Pass both actions to environment
                     next_obs, reward, terminated, truncated, info = self.env.step(action, opponent_action=action_opp)
+                    
+                    # --- Collision Penalty (Red Car) ---
+                    # Penalize Red Car if it hits Blue Car
+                    if self.env.car and self.env.car2:
+                        for contact in self.env.car.hull.contacts:
+                            if contact.other == self.env.car2.hull:
+                                reward -= 10.0
+                                # print("Impact Penalty! -10") # Optional Debug
+                                break
+                                
                     repeat_reward += reward
                     
                     # --- Opponent Reward Calculation ---
@@ -392,7 +402,7 @@ def main():
     
     # NPC Agent Configuration
     # Default to Heuristic
-    npc_agent = SmartAgent(env.action_space, model_path="smart_agent_model.pth")
+    npc_agent = None
     
     # If Training Mode, let NPC learn too!
     if choice == '4':
