@@ -11,12 +11,50 @@
 ## 📄 Project Content
 
 ### 🏔️ Part 1: Mountain Car
+- **Content**:  
+    Train a reinforcement learning agent using **Q-Learning** to solve the `MountainCar-v0` environment.
 
+- **Purpose**:  
+    To Test if the *Gymnasim* environment packages is **working properly**.
+
+![Mountain Car](./assets/mountain_car.gif)
 
 ### 🧊 Part 2: Frozen Lake
+- **Algorithm**:  
+    **Q-Learning** on the `FrozenLake-v1` environment (8x8 map, slippery).
+
+- **Hyperparameter Tuning**:   
+    Uses **Optuna** to find the best combination of:
+    - `epsilon_decay_rate`
+    - `min_epsilon`
+    - `learning_rate`
+
+- **Features**:
+    - **Modes**: Train (`--train`), Run (`--run`), and Tune (`--tune`).
+    - **Metrics**: Calculates and displays the success rate of the agent.
+
+- **Results**:  
+    Achieved a success rate of **55% ~ 60%** (In `500` episodes) after training for **15000 episodes** with the best hyperparameters.
+
+![Frozen Lake](./assets/frozen_lake.gif)
 
 ### 🏎️ Part 3: Car Racing
+- **Custom Environment**: `CustomCarRacing` inherits from `gymnasium.CarRacing`.
+    - **Multi-Agent**: Adds a second car (NPC/Opponent) to the track.
+    - **Visuals**: Implements a new theme and a mini-map.
 
+- **OOP Design**:
+    - **Abstraction**: `Agent` abstract base class defines the interface.
+    - **Polymorphism**: Multiple agent implementations (`ManualAgent`, `RandomAgent`, `HeuristicAgent`, `SmartAgent`).
+    - **Encapsulation**: `Trainer` class manages the game loop and rendering.
+
+- **Agents**:
+    - **Manual Agent**: Keyboard control with a boost mechanic (Spacebar).
+    - **Random Agent**: Random action selection for NPCs.
+    - **Heuristic Agent**: Rule-based driving logic for NPCs.
+    - **Smart Agent**: CNN-based reinforcement learning agent.
+
+![Car Racing](./assets/car_racing.gif)
 
 ## 🚀 Running the Project
 
@@ -38,7 +76,8 @@ python mountain_car.py --render --episodes 10
 Run the Frozen Lake environment:
 
 ```bash
-python frozen_lake.py
+# You can choose one of the following modes:
+python frozen_lake.py [--train | --run | --tune]
 ```
 
 ### 🏎️ Part 3: Car Racing
@@ -50,7 +89,7 @@ python main.py
 
 ## 🤝 Contribution
 | Name     | Part 1 | Part 2 | Part 3 |
-|--------- |------------- |-------|-------|
-| **劉育希**   |  Done ✅  |   |   |
-| **侯廷翰**   |  Done ✅  |   |   |
-| **柯伯諺**   |  Done ✅  |   |   |
+|:--------:|:-------|:-------|:-------|
+| **劉育希** |  Done ✅  | . | . |
+| **侯廷翰** |  Done ✅  | . | . |
+| **柯伯諺** |  Done ✅  | . | . |
