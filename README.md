@@ -3,36 +3,25 @@
 ## 👥 Group Members
 | Name     | Student ID   | Class |
 |--------- |------------- |-------|
-| 劉育希   | B123040049   | 中文班 `CSE391`  |
-| 侯廷翰   | B123040044   | 中文班 `CSE391`  |
-| 柯伯諺   | B123245016   | 全英班 `CSE3002` |
+| **劉育希**   | B123040049   | 中文班 `CSE391`  |
+| **侯廷翰**   | B123040044   | 中文班 `CSE391`  |
+| **柯伯諺**   | B123245016   | 全英班 `CSE3002` |
 
 
 ## 📄 Project Content
-Not yet available.
 
-  
-## 🛠️ Installation
+### 🏔️ Part 1: Mountain Car
 
-```bash
-# 1. Create a virtual environment
-python -m venv .venv
 
-# 2. Activate the virtual environment
-source .venv/bin/activate
+### 🧊 Part 2: Frozen Lake
 
-# 3. Navigate to the Gymnasium directory
-cd group_project/Gymnasium
+### 🏎️ Part 3: Car Racing
 
-# 4. Install Gymnasium in editable mode
-pip install -e .
-
-# 5. Install additional dependencies
-pip install "gymnasium[classic_control]"
-pip install matplotlib
-```
 
 ## 🚀 Running the Project
+
+### 🛠️ Installation Manual [🔗](./Installation.md) 
+To run this project, please follow the [Installation Manual](./Installation.md) to set up the necessary environment and dependencies.
 
 ### 🏔️ Part 1: Mountain Car
 Train and test the reinforcement learning agent:
@@ -52,22 +41,16 @@ Run the Frozen Lake environment:
 python frozen_lake.py
 ```
 
-### 🏭 Part 3: OOP Project Environment
-Execute the custom OOP environment:
+### 🏎️ Part 3: Car Racing
+Execute our custom Car Racing environment:
 
 ```bash
-python oop_project_env.py
+python main.py
 ```
 
-> **Environment Settings**   
-> ```bash
-> # Linux/MacOS
-> source .venv/bin/activate
-> 
-> # Windows
-> .venv\Scripts\activate
-> ``` 
-
 ## 🤝 Contribution
-
-
+| Name     | Part 1 | Part 2 | Part 3 |
+|--------- |------------- |-------|-------|
+| **劉育希**   |  Done ✅  |   |   |
+| **侯廷翰**   |  Done ✅  |   |   |
+| **柯伯諺**   |  Done ✅  |   |   |
