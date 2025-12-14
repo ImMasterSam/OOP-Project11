@@ -5,6 +5,7 @@ import numpy as np
 import math
 from custom_car_env import CustomCarRacing
 from agents import Agent, RandomAgent, ManualAgent, HeuristicAgent, SmartAgent
+import pygame, ctypes, time
 
 class Trainer:
     """
@@ -32,6 +33,14 @@ class Trainer:
             
         # NPC Agent (Heuristic) for Car 2
         self.npc_agent = HeuristicAgent(env, target_car="car2")
+
+        self.env.reset()
+        pygame.display.flip()
+        pygame.event.pump()
+        time.sleep(0.1)
+        hwnd = pygame.display.get_wm_info()["window"]
+        ctypes.windll.user32.ShowWindow(hwnd, 6)
+        ctypes.windll.user32.ShowWindow(hwnd, 9)
 
     def run(self):
         # If in training mode OR visualization of SmartAgent, initialize Opponent Agent as well
@@ -69,17 +78,12 @@ class Trainer:
             print(f"--- Episode {ep + 1} Start ---")
             
             while True:
-                # Event Handling for Pygame (Quit, etc.)
-                if self.render_enabled:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            self.env.close()
-                            return
 
-                # OLD NPC Action Removed
-                # obs_npc = self.env.get_centered_observation(self.env.car2)
-                # npc_action = self.npc_agent.select_action(obs_npc)
-                # self.env.apply_npc_action(npc_action)s
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        raise KeyboardInterrupt
+
+                # Select action
                 action = self.agent.select_action(obs)
                 
                 action_opp = None
