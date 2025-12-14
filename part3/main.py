@@ -2,6 +2,7 @@
 import gymnasium as gym
 from custom_car_env import CustomCarRacing
 from agents import Agent, RandomAgent, ManualAgent, HeuristicAgent
+import pygame, ctypes, time
 
 class Trainer:
     """
@@ -11,6 +12,14 @@ class Trainer:
         self.env = env
         self.agent = agent
         self.episodes = episodes
+
+        self.env.reset()
+        pygame.display.flip()
+        pygame.event.pump()
+        time.sleep(0.1)
+        hwnd = pygame.display.get_wm_info()["window"]
+        ctypes.windll.user32.ShowWindow(hwnd, 6)
+        ctypes.windll.user32.ShowWindow(hwnd, 9)
 
     def run(self):
         for ep in range(self.episodes):
@@ -26,6 +35,11 @@ class Trainer:
             print(f"--- Episode {ep + 1} Start ---")
             
             while True:
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        raise KeyboardInterrupt
+
                 # Select action
                 action = self.agent.select_action(obs)
                 
@@ -57,6 +71,7 @@ def main():
     
     # Polymorphism in action: We initialize specific agents but treat them uniformly
     env = CustomCarRacing(render_mode="human", lap_complete_percent=0.95)
+
     agent = None
     episodes = 3
     
