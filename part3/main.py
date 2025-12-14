@@ -4,7 +4,7 @@ import pygame
 import numpy as np
 import math
 from custom_car_env import CustomCarRacing
-from agents import Agent, RandomAgent, ManualAgent, SmartAgent
+from agents import Agent, RandomAgent, ManualAgent, SmartAgent, OpponentSmartAgent
 import pygame, ctypes, time
 
 class Trainer:
@@ -35,18 +35,18 @@ class Trainer:
         self.npc_agent = SmartAgent(env.action_space, model_path="smart_agent_model.pth")
 
         self.env.reset()
-        pygame.display.flip()
-        pygame.event.pump()
-        time.sleep(0.1)
-        hwnd = pygame.display.get_wm_info()["window"]
-        ctypes.windll.user32.ShowWindow(hwnd, 6)
-        ctypes.windll.user32.ShowWindow(hwnd, 9)
+        if self.render_enabled:
+            pygame.display.flip()
+            pygame.event.pump()
+            time.sleep(0.1)
+            hwnd = pygame.display.get_wm_info()["window"]
+            ctypes.windll.user32.ShowWindow(hwnd, 6)
+            ctypes.windll.user32.ShowWindow(hwnd, 9)
 
     def run(self):
         # If in training mode OR visualization of SmartAgent, initialize Opponent Agent as well
         self.opponent_agent = None
         if isinstance(self.agent, SmartAgent):
-            from agents import OpponentSmartAgent
             # Use dedicated OpponentSmartAgent
             self.opponent_agent = OpponentSmartAgent(self.env.action_space) 
             
@@ -79,9 +79,10 @@ class Trainer:
             
             while True:
 
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        raise KeyboardInterrupt
+                if self.render_enabled:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            raise KeyboardInterrupt
 
                 # Select action
                 action = self.agent.select_action(obs)
@@ -197,6 +198,10 @@ class Trainer:
                         print("Opponent went out of boundary. Episode Terminated.")
                     
                     if done:
+                        if terminated:
+                            print(f"System: Lap Completed 🏁 (Terminated)")
+                        if truncated:
+                            print(f"System: Car Out of Bounds / Truncated ☠️ (Truncated)")
                         break
                         
 
@@ -350,7 +355,7 @@ def main():
     print("3. Train Smart Agent (PPO)")
     print("4. Visualize Smart Agent")
     
-    choice = input("Enter choice (1-5): ").strip()
+    choice = input("Enter choice (1-4): ").strip()
     
     # Use rgb_array for custom rendering loop
     render_mode = "rgb_array"

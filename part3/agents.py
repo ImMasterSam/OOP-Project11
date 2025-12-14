@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pygame
 import torch
+import os
 from collections import deque
 from cnn_network import CNNNetwork
 
@@ -202,8 +203,13 @@ class SmartAgent(Agent):
             print(f"Error loading model: {e}. Starting fresh.")
 
     def __save(self, path):
-        torch.save(self.policy.state_dict(), path)
-        print(f"Saved model to {path}")
+        try:
+            temp_path = path + ".tmp"
+            torch.save(self.policy.state_dict(), temp_path)
+            os.replace(temp_path, path)
+            print(f"Saved model to {path}")
+        except Exception as e:
+            print(f"Warning: Failed to save model to {path}. Error: {e}")
 
     def select_action(self, observation):
         # Observation from env is (96, 96, 3)
@@ -396,6 +402,6 @@ class OpponentSmartAgent(SmartAgent):
     This agent learns to be aggressive or whatever objective we set for it.
     It functions identically to SmartAgent but saves/loads a different model.
     """
-    def __init__(self, action_space, model_path="smart_agent_model.pth"):
+    def __init__(self, action_space, model_path="smart_opponent_model.pth"):
         # Initialize SmartAgent with a different model path
         super().__init__(action_space, model_path=model_path)
