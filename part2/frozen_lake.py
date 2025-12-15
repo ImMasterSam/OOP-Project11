@@ -118,6 +118,9 @@ def run(episodes, is_training=True, render=False , epsilon_decay_rate=0.0001 , m
     sum_rewards = np.zeros(episodes)
     for t in range(episodes):
         sum_rewards[t] = np.sum(rewards_per_episode[max(0, t-100):(t+1)])
+    plt.figure(figsize=(12,6))
+    plt.xlabel('Episodes')
+    plt.ylabel('Sum of rewards in last 100 episodes')
     plt.plot(sum_rewards)
     plt.savefig('frozen_lake8x8.png')
     
