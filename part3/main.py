@@ -44,16 +44,13 @@ class Trainer:
             ctypes.windll.user32.ShowWindow(hwnd, 9)
 
     def run(self):
-        # If in training mode OR visualization of SmartAgent, initialize Opponent Agent as well
-        self.opponent_agent = None
-        if isinstance(self.agent, SmartAgent):
-            # Use dedicated OpponentSmartAgent
-            self.opponent_agent = OpponentSmartAgent(self.env.action_space) 
-            
+        # Always use the provided NPC agent as the opponent if available
+        self.opponent_agent = self.npc_agent
+
+        if self.opponent_agent:
             # Sync training state for opponent too
             if hasattr(self.opponent_agent, 'training'):
                  self.opponent_agent.training = self.training
-                 
             print("Opponent AI (Blue) Initialized.")
 
         for ep in range(self.episodes):
@@ -402,7 +399,9 @@ def main():
     
     # NPC Agent Configuration
     # Default to Heuristic
-    npc_agent = None
+    # NPC Agent Configuration
+    # Always load the Opponent Smart Agent (Blue Car)
+    npc_agent = OpponentSmartAgent(env.action_space, model_path="smart_opponent_model.pth")
     
     # If Training Mode, let NPC learn too!
     if choice == '4':
