@@ -43,7 +43,7 @@
     - **Multi-Agent**: Adds a second car (NPC/Opponent) to the track.
     - **Visuals**: Implements a new theme and a mini-map.
 
-- **OOP Design**:
+- **OOP Design**: [UML Graph](./UML.svg)
     - **Abstraction**: `Agent` abstract base class defines the interface.
     - **Polymorphism**: Multiple agent implementations (`ManualAgent`, `RandomAgent`, `HeuristicAgent`, `SmartAgent`).
     - **Encapsulation**: `Trainer` class manages the game loop and rendering.
@@ -87,8 +87,8 @@ python main.py
 ```
 
 ## 🤝 Contribution
-| Name     | Part 1 | Part 2 | Part 3 |
-|:--------:|:-------|:-------|:-------|
-| **劉育希** |  Done ✅  | . | . |
-| **侯廷翰** |  Done ✅  | . | . |
-| **柯伯諺** |  Done ✅  | . | . |
+| Name     | Part 1 | Part 2 | Part 3 | Others |
+|:--------:|:-------|:-------|:-------|:---------------------|
+| **劉育希** |  Done ✅  | Optuna | Readme & OOP Design | Slides & Reflection Report |
+| **侯廷翰** |  Done ✅  | Greedy Search | Reinforcement Learning Part | Reflection Report |
+| **柯伯諺** |  Done ✅  | Optuna | OOP Structure Implementation | UML Diagram & Slides |
