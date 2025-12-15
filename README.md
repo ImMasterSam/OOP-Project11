@@ -51,7 +51,6 @@
 - **Agents**:
     - **Manual Agent**: Keyboard control with a boost mechanic (Spacebar).
     - **Random Agent**: Random action selection for NPCs.
-    - **Heuristic Agent**: Rule-based driving logic for NPCs.
     - **Smart Agent**: CNN-based reinforcement learning agent.
 
 ![Car Racing](./assets/car_racing.gif)
